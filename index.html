@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Subtrain stars made by 715209</title>
+
+    <style>
+        .inactive {
+            opacity: 0.5;
+        }
+
+        img {
+            width: 80px;
+        }
+    </style>
 </head>
 
 <body>
@@ -19,14 +29,19 @@
                 this.timeout = timeout;
                 this.warnTimer = warnTimer;
 
-                this.subs = 0;
+                this.subs = 4;
                 this.loc = 0;
                 this.update = increasesAfter;
                 this.timer = null;
-                this.panicIcon = "☆"
+                // this.panicIcon = "☆";
+                // this.icons = ["★", "☆"];
+                this.panicIcon = null;
+                this.icon1 = "http://img.icons8.com/offices/344/bright-moon.png";
+                this.icon2 = "http://img.icons8.com/ios-glyphs/344/bright-moon--v1.png";
 
                 this.div = document.getElementById("stars");
-                this.draw();
+                // this.draw();
+                this.updateStars();
             }
 
             draw() {
@@ -34,12 +49,15 @@
 
                 for (let i = 0; i < this.stars; i++) {
                     let node = document.createElement("span", "");
-                    let star = document.createTextNode("☆");
+                    // let star = document.createTextNode(this.icons[0]);
+                    let star = document.createElement("img");
+                    node.className = "inactive";
+                    star.src = this.icon1;
                     node.appendChild(star);
                     this.div.appendChild(node);
                 }
 
-                this.updateStars();
+                // this.updateStars();
             }
 
             // update stars (to fill it)
@@ -47,9 +65,14 @@
             updateStars() {
                 setInterval(() => {
                     if (this.update <= this.subs) {
+                        if (!this.div.hasChildNodes()) {
+                            this.draw();
+                        }
+
                         if (this.loc < this.stars) {
-                            this.div.childNodes[this.loc].innerHTML = "★";
-                            // this.div.childNodes[this.loc].className = "filled";
+                            // this.div.childNodes[this.loc].innerHTML = this.icons[1];
+                            this.div.childNodes[this.loc].firstChild.src = this.icon2;
+                            this.div.childNodes[this.loc].className = "active";
                             this.loc += 1;
                         } else {
                             console.log("No more stars left D:");
@@ -76,12 +99,7 @@
                     console.log("Timer stopped you lost :D");
                     clearTimeout(this.startFreakingOut);
 
-                    if (!this.loc == 0) {
-                        for (let j = 0; j < this.loc; j++) {
-                            this.div.childNodes[j].innerHTML = "☆";
-                        }
-                    }
-
+                    this.div.innerHTML = "";
                     this.timer = null;
                     this.subs = 0;
                     this.loc = 0;
@@ -99,14 +117,15 @@
                     if (!this.loc == 0) {
                         console.log("It's time to freakout")
 
-                        for (let j = 0; j < this.loc; j++) {
-                            this.div.childNodes[j].innerHTML = this.panicIcon;
+                        if (this.panicIcon == this.icon1) {
+                            this.panicIcon = this.icon2;
+                        } else {
+                            this.panicIcon = this.icon1;
                         }
 
-                        if (this.panicIcon == "☆") {
-                            this.panicIcon = "★";
-                        } else {
-                            this.panicIcon = "☆";
+                        for (let j = 0; j < this.loc; j++) {
+                            // this.div.childNodes[j].innerHTML = this.panicIcon;
+                            this.div.childNodes[j].firstChild.src = this.panicIcon;
                         }
 
                         this.panicMode(1000);
