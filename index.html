@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Subtrain stars made by 715209</title>
+</head>
+
+<body>
+    <div id="stars" style="font-size: 100px;"></div>
+
+    <script>
+        class Subtrain {
+            constructor(stars, increasesAfter, timeout, warnTimer) {
+                this.stars = stars;
+                this.increasesAfter = increasesAfter;
+                this.timeout = timeout;
+                this.warnTimer = warnTimer;
+
+                this.subs = 0;
+                this.loc = 0;
+                this.update = increasesAfter;
+                this.timer = null;
+                this.panicIcon = "☆"
+
+                this.div = document.getElementById("stars");
+                this.draw();
+            }
+
+            draw() {
+                console.log(`Drawing ${this.stars} stars`);
+
+                for (let i = 0; i < this.stars; i++) {
+                    let node = document.createElement("span", "");
+                    let star = document.createTextNode("☆");
+                    node.appendChild(star);
+                    this.div.appendChild(node);
+                }
+
+                this.updateStars();
+            }
+
+            // update stars (to fill it)
+            // TODO: maybe find a better way to do this
+            updateStars() {
+                setInterval(() => {
+                    if (this.update <= this.subs) {
+                        if (this.loc < this.stars) {
+                            this.div.childNodes[this.loc].innerHTML = "★";
+                            // this.div.childNodes[this.loc].className = "filled";
+                            this.loc += 1;
+                        } else {
+                            console.log("No more stars left D:");
+                        }
+
+                        this.update += this.increasesAfter;
+
+                        if (this.timer == null) {
+                            this.startTimer();
+                        } else {
+                            console.log("resetting timer");
+                            clearTimeout(this.timer);
+                            clearTimeout(this.startFreakingOut);
+                            this.startTimer();
+                        }
+                    }
+                }, 1000);
+            }
+
+            startTimer() {
+                console.log("Starting timer");
+
+                this.timer = setTimeout(() => {
+                    console.log("Timer stopped you lost :D");
+                    clearTimeout(this.startFreakingOut);
+
+                    if (!this.loc == 0) {
+                        for (let j = 0; j < this.loc; j++) {
+                            this.div.childNodes[j].innerHTML = "☆";
+                        }
+                    }
+
+                    this.timer = null;
+                    this.subs = 0;
+                    this.loc = 0;
+                    this.update = this.increasesAfter;
+                }, this.timeout * 1000);
+
+                this.panicMode();
+            }
+
+            // TODO: find a better way?
+            panicMode(time) {
+                if (time == null) time = (this.timeout * 1000) - (this.warnTimer * 1000);
+
+                this.startFreakingOut = setTimeout(() => {
+                    if (!this.loc == 0) {
+                        console.log("It's time to freakout")
+
+                        for (let j = 0; j < this.loc; j++) {
+                            this.div.childNodes[j].innerHTML = this.panicIcon;
+                        }
+
+                        if (this.panicIcon == "☆") {
+                            this.panicIcon = "★";
+                        } else {
+                            this.panicIcon = "☆";
+                        }
+
+                        this.panicMode(1000);
+                    }
+                }, time);
+            }
+        }
+
+        class Twitch {
+            constructor(channel, giveMeTheStars) {
+                this.channel = channel;
+                this.subtrain = giveMeTheStars;
+
+                // Start
+                this.open();
+            }
+
+            open() {
+                this.ws = new WebSocket("wss://irc-ws.chat.twitch.tv:443");
+
+                this.ws.onopen = this.onOpen.bind(this);
+                this.ws.onmessage = this.onMessage.bind(this);
+                this.ws.onerror = this.onError.bind(this);
+                this.ws.onclose = this.onClose.bind(this);
+            }
+
+            keepAlive() {
+                this.interval = setInterval(() => {
+                    this.ws.send("PING :tmi.twitch.tv\r\n");
+
+                    // really should check if i receive a pong back.
+                }, 4000);
+            }
+
+            onOpen() {
+                if (this.ws !== null && this.ws.readyState === 1) {
+                    console.log("Successfully Connected");
+                    console.log(`Authenticating and joining channel ${this.channel}`);
+
+                    this.ws.send("CAP REQ :twitch.tv/tags twitch.tv/commands");
+                    // this.ws.send(`PASS ${this.password}`);
+                    this.ws.send(`NICK justinfan715209`);
+                    this.ws.send(`JOIN #${this.channel}`);
+                    this.ws.send(`JOIN #summit1g`);
+                    this.ws.send(`JOIN #xqcow`);
+                    this.ws.send(`JOIN #koil`);
+                    this.ws.send(`JOIN #cjayride`);
+                    this.ws.send(`JOIN #jaystreazy`);
+                    this.ws.send(`JOIN #moonmoon_ow`);
+
+                    this.keepAlive();
+                }
+            }
+
+            onClose() {
+                console.log("Disconnected from twitch server");
+                clearInterval(this.interval);
+                this.reconnect();
+            }
+
+            close() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+            }
+
+            reconnect() {
+                console.log(`Trying to reconnect in 5 seconds`);
+
+                setTimeout(() => {
+                    console.log("Reconnecting...");
+                    this.open();
+                }, 5000);
+            }
+
+            onError(e) {
+                console.log(new Error(e));
+            }
+
+            onMessage(message) {
+                if (message !== null) {
+                    const parsed = this.parse(message.data);
+                    // console.log(parsed);
+
+                    switch (parsed.command) {
+                        case "PRIVMSG":
+                            // console.log("Got message");
+                            break;
+                        case "USERNOTICE":
+                            this.handleSubs(parsed);
+                            break;
+                        case "PING":
+                            this.ws.send(`PONG ${parsed.channel}`);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            parse(message) {
+                let parsedMessage = {
+                    tags: {},
+                    channel: null,
+                    command: null,
+                    username: null,
+                    message: null,
+                    raw: message
+                };
+
+                const firstString = message.split(" ", 1)[0];
+
+                // tags
+                if (message.startsWith("@")) {
+                    var space = message.indexOf(" ");
+                    const tagsRaw = message.slice(1, space);
+                    const tagsSplit = tagsRaw.split(";");
+
+                    tagsSplit.map(d => {
+                        const tagSplit = d.split("=");
+                        parsedMessage.tags[tagSplit[0]] = tagSplit[1];
+                    });
+                }
+
+                message = message.slice(space + 1).trim().split(" ");
+
+                let pos = 0;
+
+                // there's a username
+                if (message[0].startsWith(":")) {
+                    parsedMessage.username = message[0];
+                    pos += 1;
+                }
+
+                parsedMessage.command = message[pos];
+                parsedMessage.channel = message[pos + 1];
+                if (!message[pos + 2] == "") parsedMessage.message = message.slice(3).join(" ").slice(1);
+
+                return parsedMessage;
+            }
+
+            handleSubs(msg) {
+                // How should we handle giftsubs/anonymous gifts???
+                switch (msg.tags["msg-id"]) {
+                    case "sub":
+                    case "resub":
+                        console.log(msg);
+                        this.subtrain.subs += 1;
+                        console.log(this.subtrain.subs);
+                        break;
+
+                    default:
+                        console.log("unhandled usermsg", msg);
+                        break;
+                }
+            }
+        }
+
+        let subtrain = new Subtrain(5, 1, 60, 10);
+        let twitch = new Twitch("715209", subtrain);
+    </script>
+</body>
+
+</html>
