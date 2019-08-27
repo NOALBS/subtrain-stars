@@ -45,7 +45,7 @@
             }
 
             draw() {
-                console.log(`Drawing ${this.stars} stars`);
+                // console.log(`Drawing ${this.stars} stars`);
 
                 for (let i = 0; i < this.stars; i++) {
                     let node = document.createElement("span", "");
@@ -75,7 +75,7 @@
                             this.div.childNodes[this.loc].className = "active";
                             this.loc += 1;
                         } else {
-                            console.log("No more stars left D:");
+                            // console.log("No more stars left D:");
                         }
 
                         this.update += this.increasesAfter;
@@ -83,7 +83,7 @@
                         if (this.timer == null) {
                             this.startTimer();
                         } else {
-                            console.log("resetting timer");
+                            // console.log("resetting timer");
                             clearTimeout(this.timer);
                             clearTimeout(this.startFreakingOut);
                             this.startTimer();
@@ -93,10 +93,10 @@
             }
 
             startTimer() {
-                console.log("Starting timer");
+                // console.log("Starting timer");
 
                 this.timer = setTimeout(() => {
-                    console.log("Timer stopped you lost :D");
+                    // console.log("Timer stopped you lost :D");
                     clearTimeout(this.startFreakingOut);
 
                     this.div.innerHTML = "";
@@ -115,7 +115,7 @@
 
                 this.startFreakingOut = setTimeout(() => {
                     if (!this.loc == 0) {
-                        console.log("It's time to freakout")
+                        // console.log("It's time to freakout")
 
                         if (this.panicIcon == this.icon1) {
                             this.panicIcon = this.icon2;
@@ -202,12 +202,11 @@
             onMessage(message) {
                 if (message !== null) {
                     const parsed = this.parse(message.data);
-                    // console.log(parsed);
 
                     switch (parsed.command) {
-                        case "PRIVMSG":
-                            // console.log("Got message");
-                            break;
+                        // case "PRIVMSG":
+                        // console.log("Got message");
+                        // break;
                         case "USERNOTICE":
                             this.handleSubs(parsed);
                             break;
@@ -229,8 +228,6 @@
                     message: null,
                     raw: message
                 };
-
-                const firstString = message.split(" ", 1)[0];
 
                 // tags
                 if (message.startsWith("@")) {
@@ -262,17 +259,16 @@
             }
 
             handleSubs(msg) {
-                // How should we handle giftsubs/anonymous gifts???
                 switch (msg.tags["msg-id"]) {
                     case "sub":
                     case "resub":
-                        console.log(msg);
+                    case "subgift":
+                    case "anonsubgift":
                         this.subtrain.subs += 1;
-                        console.log(this.subtrain.subs);
                         break;
 
                     default:
-                        console.log("unhandled usermsg", msg);
+                        // console.log("unhandled usermsg", msg);
                         break;
                 }
             }
